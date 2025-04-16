@@ -64,18 +64,20 @@ const Home = () => {
                 </tr>
               </thead>
               <tbody>
-                
-                    <tr  className="table-row">
-                      <td>dhsghd</td>
-                      <td>edejdhdhdh</td>
-                      <td className="task-cell">ddc,hcea</td>
+                {data.length > 0 ? (
+                  data.map((student) => (
+                    <tr key={student.id} className="table-row">
+                      <td>{student.id}</td>
+                      <td>{student.title}</td>
+                      <td className="task-cell">{student.description}</td>
                       <td className="action-cell">
                         <button className='read-btn'>Read</button>
                         <button className="edit-btn">Edit</button>
                         <button className="delete-btn">Delete</button>
                       </td>
                     </tr>
-                    
+                  ))
+                ) : (
                   <tr>
                     <td colSpan="4" className="empty-message">
                       <div className="empty-content">
@@ -86,7 +88,7 @@ const Home = () => {
                       </div>
                     </td>
                   </tr>
-              
+                )}
               </tbody>
             </table>
           </div>
