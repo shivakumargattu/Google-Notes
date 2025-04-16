@@ -1,101 +1,133 @@
 import React, { useEffect, useState } from 'react';
 import axios from "axios";
+import Loading from './Loading';
+import Error from './Error';
+import NoteList from './NoteList';
+import NoteForm from './NoteForm';
+import NoteView from "./NoteView"
+
 
 const Home = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [currentNote, setCurrentNote] = useState(null);
+  const [viewNote, setViewNote] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/");
-        setData(response.data);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to fetch data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-dots">
-          <div className="dot"></div>
-          <div className="dot"></div>
-          <div className="dot"></div>
-        </div>
-      </div>
-    );
-  }
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get("http://localhost:5000/");
+      setData(response.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to fetch data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-message">
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const handleCreate = () => {
+    setCurrentNote(null);
+    setIsEditing(false);
+    setShowForm(true);
+  };
+
+  const handleRead = async (id) => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`http://localhost:5000/${id}`);
+      setViewNote(response.data);
+    } catch (err) {
+      console.error("Error fetching note:", err);
+      setError("Failed to fetch note details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (note) => {
+    setCurrentNote(note);
+    setIsEditing(true);
+    setShowForm(true);
+  };
+
+  const handleSave = async (formData) => {
+    try {
+      setLoading(true);
+      if (isEditing) {
+        await axios.put(`http://localhost:5000/${currentNote.id}`, formData);
+      } else {
+        await axios.post("http://localhost:5000/", formData);
+      }
+      setShowForm(false);
+      fetchData();
+    } catch (err) {
+      console.error("Error saving note:", err);
+      setError("Failed to save note. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      setLoading(true);
+      await axios.delete(`http://localhost:5000/${id}`);
+      fetchData();
+    } catch (err) {
+      console.error("Error deleting note:", err);
+      setError("Failed to delete note. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <Loading />;
+  if (error) return <Error message={error} />;
 
   return (
     <div className="page-container">
       <div className="content-wrapper">
         <div className="header-section">
-          <h1>Student Tasks</h1>
-         <button className='crateNote'>Add Note +</button>
+          <h1>Make It a Notes</h1>
+          <button className='createNote' onClick={handleCreate}>Add Note +</button>
         </div>
 
-        <div className="table-container">
-          <div className="table-wrapper">
-            <table className="student-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Title</th>
-                  <th>Note Description</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.length > 0 ? (
-                  data.map((student) => (
-                    <tr key={student.id} className="table-row">
-                      <td>{student.id}</td>
-                      <td>{student.title}</td>
-                      <td className="task-cell">{student.description}</td>
-                      <td className="action-cell">
-                        <button className='read-btn'>Read</button>
-                        <button className="edit-btn">Edit</button>
-                        <button className="delete-btn">Delete</button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="empty-message">
-                      <div className="empty-content">
-                        <svg className="empty-icon" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <p>No student tasks found</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <NoteList 
+          data={data} 
+          onRead={handleRead} 
+          onEdit={handleEdit} 
+          onDelete={handleDelete} 
+        />
+
+        {showForm && (
+          <NoteForm
+            initialData={currentNote || {}}
+            onSave={handleSave}
+            onCancel={() => setShowForm(false)}
+            isEditing={isEditing}
+          />
+        )}
+
+        {viewNote && (
+          <NoteView
+            note={viewNote}
+            onClose={() => setViewNote(null)}
+            onEdit={(note) => {
+              setViewNote(null);
+              handleEdit(note);
+            }}
+          />
+        )}
       </div>
-
-      
     </div>
   );
 };
