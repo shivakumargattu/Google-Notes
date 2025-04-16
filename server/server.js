@@ -15,11 +15,12 @@ const db=mysql.createConnection({
 })
 
 app.get("/",(req,res)=>{
-    const sql="SELECT * FROM STUDENT";
-    db.query(sql,(err,result)=>{
-        if(err) return res.json({message:"Error inside the server"})
-            return res.json(result)
-    })
+    const sql="select * from notes"
+   db.query(sql,(err,result)=>{
+    if(err) return res.json({message:"error is inside server "})
+        return res.json(result)
+   })
+
 })
 app.listen(5000,()=>{
     console.log("server running ")
